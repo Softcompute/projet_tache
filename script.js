@@ -1,21 +1,52 @@
-// Tableau contenant les tâches. Chaque tâche est un objet.
-let taches = [
-  { titre: "Comprendre les variables JavaScript", terminee: true },
-  { titre: "Créer une application de tâches", terminee: false },
-  { titre: "Créer une application de web", terminee: false }
-];
+const CLE_TACHES = "taskflow-taches";
 
-// Sélection des éléments HTML avec querySelector.
+// Si une sauvegarde existe, elle est chargée. Sinon, on démarre avec une liste vide.
+let taches = chargerTaches();
+
 const formulaire = document.querySelector("#formulaire-tache");
 const champTache = document.querySelector("#champ-tache");
 const listeTaches = document.querySelector("#liste-taches");
 const message = document.querySelector("#message");
 const compteurTaches = document.querySelector("#compteur-taches");
+const pourcentageProgression = document.querySelector("#pourcentage-progression");
+const barreProgression = document.querySelector("#barre-progression");
+const carteProgression = document.querySelector(".custom-progress");
+const messageProgression = document.querySelector("#message-progression");
+const objectifProgression = document.querySelector("#objectif-progression");
 
-// Ajoute une tâche dans le tableau.
+// Récupère les tâches sauvegardées dans le navigateur.
+function chargerTaches() {
+  const sauvegarde = localStorage.getItem(CLE_TACHES);
+
+  // Bonne condition : s'il n'y a aucune sauvegarde, on renvoie un tableau vide.
+  if (sauvegarde === null) {
+    return [];
+  }
+
+  try {
+    const tachesSauvegardees = JSON.parse(sauvegarde);
+
+    // On vérifie que la donnée sauvegardée est bien un tableau.
+    if (Array.isArray(tachesSauvegardees)) {
+      return tachesSauvegardees;
+    } else {
+      return [];
+    }
+  } catch (erreur) {
+    // Si la sauvegarde est invalide, l'application repart proprement.
+    return [];
+  }
+}
+
+// Enregistre la version actuelle du tableau dans le navigateur.
+function sauvegarderTaches() {
+  localStorage.setItem(CLE_TACHES, JSON.stringify(taches));
+}
+
 function ajouterTache(titre) {
   const titreNettoye = titre.trim();
 
+  // Condition de validation : un titre vide n'est pas accepté.
   if (titreNettoye === "") {
     message.textContent = "Écris un titre avant d'ajouter la tâche.";
     return;
@@ -26,43 +57,74 @@ function ajouterTache(titre) {
     terminee: false
   });
 
-  message.textContent = "Tâche ajoutée.";
+  sauvegarderTaches();
+  message.textContent = "Tâche ajoutée et sauvegardée automatiquement.";
   champTache.value = "";
   afficherTaches();
 }
 
-// Marque une tâche comme terminée ou non terminée.
 function marquerCommeTerminee(index) {
-  if (taches[index]) {
+  // On vérifie que l'index correspond bien à une tâche existante.
+  if (taches[index] !== undefined) {
     taches[index].terminee = !taches[index].terminee;
+    sauvegarderTaches();
     afficherTaches();
   }
 }
 
-// Supprime une tâche du tableau.
 function supprimerTache(index) {
-  taches.splice(index, 1);
-  message.textContent = "Tâche supprimée.";
-  afficherTaches();
+  if (taches[index] !== undefined) {
+    taches.splice(index, 1);
+    sauvegarderTaches();
+    message.textContent = "Tâche supprimée automatiquement.";
+    afficherTaches();
+  }
 }
 
-// Rafraîchit la liste affichée à partir du tableau JavaScript.
+// Calcule et affiche la progression à partir des tâches terminées.
+function mettreAJourProgression() {
+  const totalTaches = taches.length;
+  const nombreTerminees = taches.filter(function (tache) {
+    return tache.terminee === true;
+  }).length;
+
+  // Condition : avec zéro tâche, la progression reste à 0 %.
+  let progression = 0;
+  if (totalTaches > 0) {
+    progression = Math.round((nombreTerminees / totalTaches) * 100);
+  }
+
+  pourcentageProgression.textContent = `${progression}%`;
+  barreProgression.style.width = `${progression}%`;
+  carteProgression.setAttribute("aria-valuenow", progression);
+
+  if (totalTaches === 0) {
+    messageProgression.textContent = "Aucune tâche terminée";
+    objectifProgression.textContent = "Commencez maintenant";
+  } else if (progression === 100) {
+    messageProgression.textContent = "Toutes les tâches sont terminées";
+    objectifProgression.textContent = "Objectif atteint";
+  } else {
+    messageProgression.textContent = `${nombreTerminees} tâche(s) terminée(s)`;
+    objectifProgression.textContent = "Continuez ainsi";
+  }
+}
+
 function afficherTaches() {
   listeTaches.innerHTML = "";
   compteurTaches.textContent = taches.length;
+  mettreAJourProgression();
 
   if (taches.length === 0) {
-    listeTaches.innerHTML = "<li>Aucune tâche pour le moment.</li>";
+    listeTaches.innerHTML = "<li class=\"empty-state\">Aucune tâche. Ajoutez votre première action.</li>";
     return;
   }
 
-  // Boucle for pour parcourir toutes les tâches.
   for (let index = 0; index < taches.length; index++) {
     const tache = taches[index];
     const element = document.createElement("li");
     element.classList.add("tache");
 
-    // Condition if/else pour identifier l'état de la tâche.
     if (tache.terminee === true) {
       element.classList.add("terminee");
     } else {
@@ -94,11 +156,9 @@ function afficherTaches() {
   }
 }
 
-// Événement clic indirect du formulaire pour ajouter une tâche.
 formulaire.addEventListener("submit", function (evenement) {
   evenement.preventDefault();
   ajouterTache(champTache.value);
 });
 
-// Affichage initial de la liste.
 afficherTaches();
