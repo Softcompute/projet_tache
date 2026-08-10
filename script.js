@@ -1,4 +1,4 @@
-const CLE_TACHES = "taskflow-taches";
+const CLE_TACHES = "Zaya-taches";
 
 // Si une sauvegarde existe, elle est chargée. Sinon, on démarre avec une liste vide.
 let taches = chargerTaches();
@@ -8,11 +8,6 @@ const champTache = document.querySelector("#champ-tache");
 const listeTaches = document.querySelector("#liste-taches");
 const message = document.querySelector("#message");
 const compteurTaches = document.querySelector("#compteur-taches");
-const pourcentageProgression = document.querySelector("#pourcentage-progression");
-const barreProgression = document.querySelector("#barre-progression");
-const carteProgression = document.querySelector(".custom-progress");
-const messageProgression = document.querySelector("#message-progression");
-const objectifProgression = document.querySelector("#objectif-progression");
 
 // Récupère les tâches sauvegardées dans le navigateur.
 function chargerTaches() {
@@ -81,39 +76,9 @@ function supprimerTache(index) {
   }
 }
 
-// Calcule et affiche la progression à partir des tâches terminées.
-function mettreAJourProgression() {
-  const totalTaches = taches.length;
-  const nombreTerminees = taches.filter(function (tache) {
-    return tache.terminee === true;
-  }).length;
-
-  // Condition : avec zéro tâche, la progression reste à 0 %.
-  let progression = 0;
-  if (totalTaches > 0) {
-    progression = Math.round((nombreTerminees / totalTaches) * 100);
-  }
-
-  pourcentageProgression.textContent = `${progression}%`;
-  barreProgression.style.width = `${progression}%`;
-  carteProgression.setAttribute("aria-valuenow", progression);
-
-  if (totalTaches === 0) {
-    messageProgression.textContent = "Aucune tâche terminée";
-    objectifProgression.textContent = "Commencez maintenant";
-  } else if (progression === 100) {
-    messageProgression.textContent = "Toutes les tâches sont terminées";
-    objectifProgression.textContent = "Objectif atteint";
-  } else {
-    messageProgression.textContent = `${nombreTerminees} tâche(s) terminée(s)`;
-    objectifProgression.textContent = "Continuez ainsi";
-  }
-}
-
 function afficherTaches() {
   listeTaches.innerHTML = "";
   compteurTaches.textContent = taches.length;
-  mettreAJourProgression();
 
   if (taches.length === 0) {
     listeTaches.innerHTML = "<li class=\"empty-state\">Aucune tâche. Ajoutez votre première action.</li>";
